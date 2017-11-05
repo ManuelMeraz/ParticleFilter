@@ -1,16 +1,16 @@
 function x = sample_motion_model_velocity(u, x, dt)
+    v = u(1);
+    omega = u(2);
+
     % Alpha 1-4
     a_1_4 = 0.01;
 
     % Alpha 4-5
     a_4_5 = 0.0005;    
 
-    v = u(1);
-    omega = u(2);
-
-    v = v + rand * (a_1_4 * v + a_1_4 * omega);
-    omega = omega + rand * (a_1_4 * v + a_1_4 * omega);
-    gamma =  rand * (a_4_5 * v + a_4_5 * omega);
+    v = v + randn * (a_1_4 * v + a_1_4 * omega);
+    omega = omega + randn * (a_1_4 * v + a_1_4 * omega);
+    gamma =  randn * (a_4_5 * v + a_4_5 * omega);
 
     weight = v / omega;
 

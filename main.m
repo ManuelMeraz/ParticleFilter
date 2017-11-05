@@ -1,13 +1,13 @@
 % Manuel Meraz
 % EECS 270 Robot Algorithms
 % Simple Particle Filter
-pkg load statistics
+%pkg load statistics
 
 inputs = read_files();
 
 % Number of particles
 % Minimum is 9
-M = 100;
+M = 20000;
 
 % Initialize continuous state space ranges
 % Each row represents a dimension for the state
@@ -15,46 +15,49 @@ C = [-4, 6; -3, 10; 0, 2*pi];
 
 % Each particle will be a column vector such that
 % particle = [x; y; theta; probability]
-particles = initialize_particles(M, C);
+% Adjust M for actual number of particles after initialized
+[M, particles] = initialize_particles(M, C);
 
 % For the motion model
-dt = 1;
+dt = 0.5;
 
-%for i = 1:length(inputs.commands)
-for i = 1:100
+good_particles_found = false;
 
-    u = inputs.commands(i,:).';
-    z = inputs.sensor_readings(i,:).';
+%%for i = 1:length(inputs.commands)
+for k = 1:100
 
-    for i = 1:length(particles)
+    % Action command
+    u = inputs.commands(k,:).';
 
-        particles(1:3,i) = sample_motion_model_velocity(u, particles(1:3,i), dt);
+    % Sensor reading
+    z = inputs.sensor_readings(k,:).';
 
-        particles(4,i) =  particles(4,i) * beam_range_finder_model(z, particles(:,i));
+    % Count the number of particles that survive
+    for m = 1:M
+
+        particle = particles.poses(:,m);
+        weight = particles.weights(1,m);
+
+        particle = sample_motion_model_velocity(u, particle, dt);
+
+        weight =  weight * beam_range_finder_model(z, particle);
+
+        particles.poses(:,m) = particle;
+        particles.weights(1,m) = weight;
 
     end
 
-    particles(4,:) = particles(4,:)./sum(particles(4,:));
+    [M, particles] = adjust_particles(particles, M, C);
 
-    effective_sample_size = 1/sum(particles(4,:).^2);
-    resample_percentage = 0.50;
-    resample_threshold = resample_percentage * M;
-
-    if effective_sample_size < resample_threshold
-        sample = randsample(1:length(particles), length(particles), true, particles(4,:));
-        particles = particles(:, sample);
-        particles(4,:) = particles(4,:)./sum(particles(4,:));
-    end
-
-
-    %plot(1:length(particles),particles(4,:))
     % Plot Settings
-    %hold on;
-    
-    scatter(particles(1,:), particles(2,:), 3, 'r');
+    scatter(particles.poses(1,:), particles.poses(2,:), 3, 'r');
+    hold on;
+
+    scatter(mean(particles.poses(1,:)), mean(particles.poses(2,:)),5,'b','filled')
+
     xlim([-10, 10]);
     ylim([-5, 20]);
-    %drawnow;
-    pause(0.1);
-
+    drawnow;
+    pause(0.00001);
+    clf;
 end

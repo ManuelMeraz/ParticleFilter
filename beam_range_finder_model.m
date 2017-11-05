@@ -5,9 +5,13 @@ function q = beam_range_finder_model(z, particle)
 
     for i = 1:length(landmarks)
        d = distance(particle(1:2),landmarks(i,:).');
-       sensor_reading = z(i);
-       p = normpdf(d - z(i), 0, 2);
+       p = normpdf(d - z(i), 0, 0.1);
        q = q * p;
+
+       if q == 0
+           return;
+       end
+
     end
 
 end
