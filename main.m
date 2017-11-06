@@ -10,7 +10,9 @@ inputs = read_files();
 M = 64;
 
 % Increase M until weighted mean moves
-init = false;
+clear init;
+init.condition = false;
+init.num_particles = M;
 
 % Uniform importance sampling means that given
 % all the fit particles, sample particles from the fit
@@ -28,7 +30,7 @@ resampling.method = 'uniform';
 
 % The ratio of particles not sampled from the importance
 % distribution. 
-resampling.exploratory_ratio = 0.1;
+resampling.exploratory_ratio = 0.01;
 
 % Initialize continuous state space ranges
 % Each row represents a dimension for the state
@@ -81,5 +83,9 @@ for k = 1:length(inputs.commands)
     [M, particles, init] = adjust_particles(weighted_mean, fit_particles, resampling, M, C, init);
     num_particles = M
 
-    plot_data(particles, weighted_mean);
+    done = false;
+    plot_data(particles, weighted_mean, done);
 end
+
+done = true;
+plot_data(particles, weighted_mean, done);

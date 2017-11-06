@@ -1,24 +1,25 @@
 function [M, particles, init] = adjust_particles(weighted_mean, particles, resampling, M, C, init)
     if sum(particles.weights) == 0
 
-        if ~init
+        if ~init.condition
             % Keep doubling until good size of particles found
-            M = 3 * M;
+            M = 2 * M;
             [M, particles] = initialize_particles([0; 0], M, C);
         else
 
             % Check all particles around weighted mean for 
             % Possible location
             C = [-1, 1; -1, 1; 0, 2*pi];
-            [M, particles] = initialize_particles(weighted_mean, M, C);
+            [init.num_parrticles, particles] = initialize_particles(weighted_mean, M, C);
         end
         return;
     end
 
     % Good size of particles found
-    if ~init
+    if ~init.condition
         'init!'
-        init = true;
+        init.condition = true;
+        init.num_particles = M;
     end
 
     % Anything less than this causes funky errors
@@ -48,7 +49,7 @@ function [M, particles, init] = adjust_particles(weighted_mean, particles, resam
             [~, exploratory_particles] = initialize_particles(weighted_mean, num_exploratory_particles, C);
             particles.poses = [particles.poses, exploratory_particles.poses];
             particles.weights = [particles.weights, exploratory_particles.weights];
-            M = length(particles.weights);
+            M = length(particles.poses);
         else
             M = num_importance_particles;
         end
