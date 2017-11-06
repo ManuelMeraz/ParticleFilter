@@ -1,23 +1,28 @@
 function [M, particles, init] = adjust_particles(weighted_mean, particles, resampling, M, C, init)
+
+    t1 = particles.time_since_reading;
+    t2 = particles.last_sensor_reading;
     if sum(particles.weights) == 0
 
         if ~init.condition
             % Keep doubling until good size of particles found
             M = 2 * M;
-            [M, particles] = initialize_particles([0; 0], M, C);
+            [M, particles] = initialize_particles([0; 0], M, C, t1, t2);
         else
 
             % Check all particles around weighted mean for 
             % Possible location
             C = [-1, 1; -1, 1; 0, 2*pi];
-            [init.num_parrticles, particles] = initialize_particles(weighted_mean, M, C);
+
+            % Scale up exploratory range by time since last sensor reading
+            C = C.*t1;
+            [init.num_parrticles, particles] = initialize_particles(weighted_mean, t1 * M, C, t1, t2);
         end
         return;
     end
 
     % Good size of particles found
     if ~init.condition
-        'init!'
         init.condition = true;
         init.num_particles = M;
     end
@@ -46,7 +51,7 @@ function [M, particles, init] = adjust_particles(weighted_mean, particles, resam
 
         if num_exploratory_particles > 4
             weighted_mean = compute_mean(particles);
-            [~, exploratory_particles] = initialize_particles(weighted_mean, num_exploratory_particles, C);
+            [~, exploratory_particles] = initialize_particles(weighted_mean, num_exploratory_particles, C, t1, t2);
             particles.poses = [particles.poses, exploratory_particles.poses];
             particles.weights = [particles.weights, exploratory_particles.weights];
             M = length(particles.poses);
@@ -62,6 +67,8 @@ end
 function particles = uniform_sampling(particles, num_particles)
     new_particles.poses = [];
     new_particles.weights = [];
+    new_particles.time_since_reading = particles.time_since_reading;
+    new_particles.last_sensor_reading = particles.last_sensor_reading;
 
     while length(new_particles.weights) < num_particles
 

@@ -1,4 +1,4 @@
-function [M, particles] = initialize_particles(weighted_mean, M, C)
+function [M, particles] = initialize_particles(weighted_mean, M, C, t1, t2)
     % To acquire M particles in the end, we're going to distribute
     % the state space over such that dimensions_root(num_particles^dimensions) = num_particles
 
@@ -31,5 +31,7 @@ function [M, particles] = initialize_particles(weighted_mean, M, C)
 
     % Particles initialized 
     particles.weights = weights;
+    particles.time_since_reading = t1;
+    particles.last_sensor_reading = t2;
 
 end

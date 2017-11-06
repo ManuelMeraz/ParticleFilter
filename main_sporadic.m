@@ -14,6 +14,9 @@ clear init;
 init.condition = false;
 init.num_particles = M;
 
+% Set to true to indefinitely pause plot
+done = false;
+
 % Uniform importance sampling means that given
 % all the fit particles, sample particles from the fit
 % set of particles with equal probability
@@ -40,10 +43,15 @@ C = [-4, 6; -3, 10; 0, 2*pi];
 % particle = [x; y; theta; probability]
 % Adjust M for actual number of particles after initialized
 weighted_mean = [0; 0];
-[M, particles] = initialize_particles(weighted_mean, M, C);
+time = 0;
+[M, particles] = initialize_particles(weighted_mean, M, C, time, time);
 
 % For the motion model
 dt = 0.5;
+
+% Acquired sensor reading
+sensor_reading = false;
+sensor_reading_count = 1;
 
 for k = 1:length(inputs.commands)
 
@@ -51,13 +59,23 @@ for k = 1:length(inputs.commands)
     u = inputs.commands(k,:).';
 
     % Sensor reading
-    z = inputs.sensor_readings(k,:).';
+    time = k * dt;
+    particles.time_since_reading = time - particles.last_sensor_reading;
+
+    if time == inputs.sporadic_sensor_readings(sensor_reading_count, 1)
+        sensor_reading = true;
+        sensor_reading_count = sensor_reading_count + 1;
+        z = inputs.sensor_readings(k,:).';
+        particles.last_sensor_reading = time;
+    end
 
     % Count the number of particles that survive
     clear fit_particles;
     fit_particles.poses = [];
     fit_particles.weights = [];
-    for m = 1:length(particles.weights)
+    fit_particles.time_since_reading = particles.time_since_reading;
+    fit_particles.last_sensor_reading = particles.last_sensor_reading;
+    for m = 1:length(particles.poses)
 
         particle = particles.poses(:,m);
         weight = particles.weights(1,m);
@@ -65,27 +83,35 @@ for k = 1:length(inputs.commands)
         % Predict particle motion
         particle = sample_motion_model_velocity(u, particle, dt);
 
-        % Weight of the new particle position
-        weight =  weight * beam_range_finder_model(z, particle);
+        particles.poses(:,m) = particle;
 
-        % The particle is useful
-        if weight > 0
+        if sensor_reading == true
+
+            % Weight of the new particle position
+            weight =  weight * beam_range_finder_model(z, particle);
+            % The particle is useful
+            if weight > 0
                 fit_particles.poses = [fit_particles.poses, particle];
                 fit_particles.weights = [fit_particles.weights, weight];
+            end
         end
+
 
     end
 
     % Compute the weighted mean of particles
     weighted_mean = compute_mean(particles);
 
-    % Normalized and Resmaples particles if necessary
-    [M, particles, init] = adjust_particles(weighted_mean, fit_particles, resampling, M, C, init);
-    num_particles = M
+    if sensor_reading == true || ~init.condition
+        % Normalized and Resmaples particles if necessary
+        [M, particles, init] = adjust_particles(weighted_mean, fit_particles, resampling, M, C, init);
+    end
 
-    done = false;
     plot_data(particles, weighted_mean, done);
+
+    sensor_reading = false;
 end
 
+% Final plot
 done = true;
 plot_data(particles, weighted_mean, done);
