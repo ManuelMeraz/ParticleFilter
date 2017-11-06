@@ -1,7 +1,6 @@
 % Manuel Meraz
 % EECS 270 Robot Algorithms
 % Simple Particle Filter
-%pkg load statistics
 
 inputs = read_files();
 
@@ -40,7 +39,8 @@ resampling.exploratory_ratio = 0.01;
 C = [-4, 6; -3, 10; 0, 2*pi];
 
 % Each particle will be a column vector such that
-% particle = [x; y; theta; probability]
+% particles.poses(:,i) = [x; y; theta]
+% particles.weights(:,i) = 0 < w < 1;
 % Adjust M for actual number of particles after initialized
 weighted_mean = [0; 0];
 time = 0;

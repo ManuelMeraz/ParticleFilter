@@ -1,7 +1,6 @@
 % Manuel Meraz
 % EECS 270 Robot Algorithms
 % Simple Particle Filter
-%pkg load statistics
 
 inputs = read_files();
 
@@ -40,7 +39,8 @@ resampling.exploratory_ratio = 0.01;
 C = [-4, 6; -3, 10; 0, 2*pi];
 
 % Each particle will be a column vector such that
-% particle = [x; y; theta; probability]
+% particles.poses(:,i) = [x; y; theta]
+% particles.weights(:,i) = 0 < w < 1;
 % Adjust M for actual number of particles after initialized
 weighted_mean = [0; 0];
 time = 0;
@@ -64,9 +64,9 @@ for k = 1:length(inputs.commands)
 
     if time == inputs.sporadic_sensor_readings(sensor_reading_count, 1)
         sensor_reading = true;
-        sensor_reading_count = sensor_reading_count + 1;
-        z = inputs.sensor_readings(k,:).';
+        z = inputs.sporadic_sensor_readings(sensor_reading_count,2:4).';
         particles.last_sensor_reading = time;
+        sensor_reading_count = sensor_reading_count + 1;
     end
 
     % Count the number of particles that survive
