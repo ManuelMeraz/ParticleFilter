@@ -5,7 +5,7 @@ function q = beam_range_finder_model(z, particle)
 
     for i = 1:length(landmarks)
        d = distance(particle(1:2),landmarks(i,:).');
-       p = normpdf(d - z(i), 0, 0.1);
+       p = normpdf(d - z(i), 0, 0.01);
        q = q * p;
 
        if q == 0

@@ -1,4 +1,4 @@
-function [M, particles] = initialize_particles(M, C)
+function [M, particles] = initialize_particles(weighted_mean, M, C)
     % To acquire M particles in the end, we're going to distribute
     % the state space over such that dimensions_root(num_particles^dimensions) = num_particles
 
@@ -7,7 +7,9 @@ function [M, particles] = initialize_particles(M, C)
 
 
     x_space = linspace(C(1,1),C(1,2),M);
+    x_space = x_space + weighted_mean(1);
     y_space = linspace(C(2,1),C(2,2),M);
+    y_space = y_space + weighted_mean(2);
     theta_space = linspace(2*pi/M, 2*pi,M);
 
     [x_space, y_space, theta_space] = meshgrid(x_space, y_space, theta_space);
