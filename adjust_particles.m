@@ -1,22 +1,27 @@
 function [M, particles, init] = adjust_particles(weighted_mean, particles, resampling, M, C, init)
 
+    % Keep tracking occuring sensor readings
+    % As new populations are generated
     t1 = particles.time_since_reading;
     t2 = particles.last_sensor_reading;
+
+    % No fit particles in previous generation
     if sum(particles.weights) == 0
 
+        % Still finding good partical population size
         if ~init.condition
-            % Keep doubling until good size of particles found
+            % Keep doubling until good population size of particles found
             M = 2 * M;
             [M, particles] = initialize_particles([0; 0], M, C, t1, t2);
         else
 
-            % Check all particles around weighted mean for 
-            % Possible location
+            % Generate particles around weighted mean 
+            % with this state configuration
             C = [-1, 1; -1, 1; 0, 2*pi];
 
             % Scale up exploratory range by time since last sensor reading
-            C = C.*t1;
-            [init.num_parrticles, particles] = initialize_particles(weighted_mean, t1 * M, C, t1, t2);
+            C = C.*log10( M) * t1;
+            [init.num_particles, particles] = initialize_particles(weighted_mean, t1 * M, C, t1, t2);
         end
         return;
     end
@@ -27,7 +32,7 @@ function [M, particles, init] = adjust_particles(weighted_mean, particles, resam
         init.num_particles = M;
     end
 
-    % Anything less than this causes funky errors
+    % Always gauarantee some exploratory particles
     if M < 100
         M = 100;
     end
@@ -38,6 +43,8 @@ function [M, particles, init] = adjust_particles(weighted_mean, particles, resam
     % How useful are they?
     effective_sample_size = 1/sum(particles.weights.^2);
 
+    % If it gets to this point most particles are useless
+    % Having a requirement is less computationally expensive
     if effective_sample_size <= 1
         num_exploratory_particles = floor(resampling.exploratory_ratio * M);
 
@@ -55,6 +62,7 @@ function [M, particles, init] = adjust_particles(weighted_mean, particles, resam
             particles.poses = [particles.poses, exploratory_particles.poses];
             particles.weights = [particles.weights, exploratory_particles.weights];
             M = length(particles.poses);
+            particles.weights = particles.weights(1,1:M);
         else
             M = num_importance_particles;
         end

@@ -17,7 +17,7 @@ function plot_data(particles, weighted_mean, done)
     drawnow;
 
     if ~done
-        pause(0.1);
+        pause(0.001);
     else
         pause();
     end
