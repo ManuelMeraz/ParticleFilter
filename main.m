@@ -6,8 +6,11 @@
 inputs = read_files();
 
 % Number of particles
-% Minimum is 9
-M = 5000;
+% Minimum is 64 due to cube rooting
+M = 64;
+
+% Increase M until weighted mean moves
+init = false;
 
 % Uniform importance sampling means that given
 % all the fit particles, sample particles from the fit
@@ -25,7 +28,7 @@ resampling.method = 'uniform';
 
 % The ratio of particles not sampled from the importance
 % distribution. 
-resampling.exploratory_ratio = 0.0;
+resampling.exploratory_ratio = 0.1;
 
 % Initialize continuous state space ranges
 % Each row represents a dimension for the state
@@ -34,8 +37,8 @@ C = [-4, 6; -3, 10; 0, 2*pi];
 % Each particle will be a column vector such that
 % particle = [x; y; theta; probability]
 % Adjust M for actual number of particles after initialized
-map_center = [0; 0];
-[M, particles] = initialize_particles(map_center, M, C);
+weighted_mean = [0; 0];
+[M, particles] = initialize_particles(weighted_mean, M, C);
 
 % For the motion model
 dt = 0.5;
@@ -75,7 +78,8 @@ for k = 1:length(inputs.commands)
     weighted_mean = compute_mean(particles);
 
     % Normalized and Resmaples particles if necessary
-    [M, particles] = adjust_particles(weighted_mean, fit_particles, resampling, M, C);
+    [M, particles, init] = adjust_particles(weighted_mean, fit_particles, resampling, M, C, init);
+    num_particles = M
 
     plot_data(particles, weighted_mean);
 end

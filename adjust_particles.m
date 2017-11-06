@@ -1,8 +1,29 @@
-function [M, particles] = adjust_particles(weighted_mean, particles, resampling, M, C)
-    C = [-1, 1; -1, 1; 0, 2*pi];
+function [M, particles, init] = adjust_particles(weighted_mean, particles, resampling, M, C, init)
     if sum(particles.weights) == 0
-        [M, particles] = initialize_particles(weighted_mean, M, C);
+
+        if ~init
+            % Keep doubling until good size of particles found
+            M = 3 * M;
+            [M, particles] = initialize_particles([0; 0], M, C);
+        else
+
+            % Check all particles around weighted mean for 
+            % Possible location
+            C = [-1, 1; -1, 1; 0, 2*pi];
+            [M, particles] = initialize_particles(weighted_mean, M, C);
+        end
         return;
+    end
+
+    % Good size of particles found
+    if ~init
+        'init!'
+        init = true;
+    end
+
+    % Anything less than this causes funky errors
+    if M < 100
+        M = 100;
     end
 
     % Normalize the fit particles
@@ -35,7 +56,6 @@ function [M, particles] = adjust_particles(weighted_mean, particles, resampling,
         particles.weights = repmat(1/M, 1, M);
 
     end
-
 end
 
 function particles = uniform_sampling(particles, num_particles)
