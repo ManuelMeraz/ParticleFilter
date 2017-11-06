@@ -7,7 +7,7 @@ inputs = read_files();
 
 % Number of particles
 % Minimum is 9
-M = 20000;
+M = 5000;
 
 % Initialize continuous state space ranges
 % Each row represents a dimension for the state
@@ -21,10 +21,7 @@ C = [-4, 6; -3, 10; 0, 2*pi];
 % For the motion model
 dt = 0.5;
 
-good_particles_found = false;
-
-%%for i = 1:length(inputs.commands)
-for k = 1:100
+for k = 1:length(inputs.commands)
 
     % Action command
     u = inputs.commands(k,:).';
@@ -33,31 +30,33 @@ for k = 1:100
     z = inputs.sensor_readings(k,:).';
 
     % Count the number of particles that survive
+    clear fit_particles;
+    fit_particles.poses = [];
+    fit_particles.weights = [];
     for m = 1:M
 
         particle = particles.poses(:,m);
         weight = particles.weights(1,m);
 
+        % Predict particle motion
         particle = sample_motion_model_velocity(u, particle, dt);
 
+        % Weight of the new particle position
         weight =  weight * beam_range_finder_model(z, particle);
 
-        particles.poses(:,m) = particle;
-        particles.weights(1,m) = weight;
+        % The particle is useful
+        if weight > 0
+                fit_particles.poses = [fit_particles.poses, particle];
+                fit_particles.weights = [fit_particles.weights, weight];
+        end
 
     end
 
-    [M, particles] = adjust_particles(particles, M, C);
+    % Normalized and Resmaples particles if necessary
+    [M, particles] = adjust_particles(fit_particles, M, C);
 
-    % Plot Settings
-    scatter(particles.poses(1,:), particles.poses(2,:), 3, 'r');
-    hold on;
+    % Compute the weighted mean of particles
+    weighted_mean = compute_mean(particles);
 
-    scatter(mean(particles.poses(1,:)), mean(particles.poses(2,:)),5,'b','filled')
-
-    xlim([-10, 10]);
-    ylim([-5, 20]);
-    drawnow;
-    pause(0.00001);
-    clf;
+    plot_data(particles, weighted_mean);
 end
