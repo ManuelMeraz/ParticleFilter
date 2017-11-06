@@ -9,6 +9,24 @@ inputs = read_files();
 % Minimum is 9
 M = 5000;
 
+% Uniform importance sampling means that given
+% all the fit particles, sample particles from the fit
+% set of particles with equal probability
+resampling.method = 'uniform'
+
+% Weighted importance sampling samples
+% and acquired particles based off of their weights
+% i.e. the fittest weights get picked
+%resampling.method = 'weighted'
+
+% Sometimes all the weights approach a probability of zero
+% Throw some particles outside of weighted mean to not
+% get completely lost and diversify the particles
+
+% The ratio of particles not sampled from the importance
+% distribution. 
+resampling.exploratory_ratio = 0.1;
+
 % Initialize continuous state space ranges
 % Each row represents a dimension for the state
 C = [-4, 6; -3, 10; 0, 2*pi];
@@ -33,7 +51,7 @@ for k = 1:length(inputs.commands)
     clear fit_particles;
     fit_particles.poses = [];
     fit_particles.weights = [];
-    for m = 1:M
+    for m = 1:length(particles.weights)
 
         particle = particles.poses(:,m);
         weight = particles.weights(1,m);
@@ -53,7 +71,7 @@ for k = 1:length(inputs.commands)
     end
 
     % Normalized and Resmaples particles if necessary
-    [M, particles] = adjust_particles(fit_particles, M, C);
+    [M, particles] = adjust_particles(fit_particles, resampling, M, C);
 
     % Compute the weighted mean of particles
     weighted_mean = compute_mean(particles);
