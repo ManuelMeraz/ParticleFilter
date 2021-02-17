@@ -1,3 +1,5 @@
+![Constant Readings](https://github.com/ManuelMeraz/ParticleFilter/blob/master/particle_filter_contant_readings.gif)
+
 run main_constant.m for constant sensor readings
 run main_sporadic.m for sporadic sensor readings
 
